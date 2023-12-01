@@ -15,12 +15,13 @@
  - Do ```./rfs CMD <filepath> ...``` to run the client command , which starts sending requst over socket connection on port 8080.
 
   ## Different commands supported on server
-    - ```./rfs WRITE <local-file-path> <remote-file-path> ``` , writes the content of local file to remote server at the given path.
-    -  ```./rfs WRITE <local-file-path> ``` , writes the content of local file to remote server at the same local path.
-    - ```./rfs GET <remote-file-path> <local-file-path> ``` , writes the content of remote file to local file system at the given path.
-    -  ```./rfs GET <local-file-path> ``` , writes the content of remote file to local file system at the same local path.
-    - ```./rfs RM <remote-file-path> ``` , deletes the content of remote file and the file at the given path on server.
-    -  ```./rfs LS <remote-file-path> ``` , fetches the versioned information of remote file on the server.
+  
+  - ```./rfs WRITE <local-file-path> <remote-file-path> ``` , writes the content of local file to remote server at the given path.
+  -  ```./rfs WRITE <local-file-path> ``` , writes the content of local file to remote server at the same local path.
+  - ```./rfs GET <remote-file-path> <local-file-path> ``` , writes the content of remote file to local file system at the given path.
+  -  ```./rfs GET <local-file-path> ``` , writes the content of remote file to local file system at the same local path.
+  - ```./rfs RM <remote-file-path> ``` , deletes the content of remote file and the file at the given path on server.
+  -  ```./rfs LS <remote-file-path> ``` , fetches the versioned information of remote file on the server.
 
 
 # Design on server
