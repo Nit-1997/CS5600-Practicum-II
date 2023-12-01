@@ -6,7 +6,6 @@
 #include <stdlib.h>
 #include "client_lib.h"
 
-void send_write_command(int socket_desc, const char *local_path, const char *remote_path);
 
 int main(int argc, char *argv[])
 {
@@ -35,15 +34,24 @@ int main(int argc, char *argv[])
             }
     }
   }else{
-            // simple write case
-            strncpy(cmd, argv[1], sizeof(cmd) - 1);
-            cmd[sizeof(cmd) - 1] = '\0';
+    strncpy(cmd, argv[1], sizeof(cmd) - 1);
+    cmd[sizeof(cmd) - 1] = '\0';
+    
+    if(strcmp(cmd , "GET") == 0){
+      strncpy(local_file_name, argv[3], sizeof(local_file_name) - 1);
+      local_file_name[sizeof(local_file_name) - 1] = '\0'; 
 
-            strncpy(local_file_name, argv[2], sizeof(local_file_name) - 1);
-            local_file_name[sizeof(local_file_name) - 1] = '\0'; 
+      strncpy(remote_file_name, argv[2], sizeof(remote_file_name) - 1);
+      remote_file_name[sizeof(remote_file_name) - 1] = '\0';
+    }else{
+      // simple write case
+      strncpy(local_file_name, argv[2], sizeof(local_file_name) - 1);
+      local_file_name[sizeof(local_file_name) - 1] = '\0'; 
 
-            strncpy(remote_file_name, argv[3], sizeof(remote_file_name) - 1);
-            remote_file_name[sizeof(remote_file_name) - 1] = '\0';
+      strncpy(remote_file_name, argv[3], sizeof(remote_file_name) - 1);
+      remote_file_name[sizeof(remote_file_name) - 1] = '\0';
+
+    }
   }
 
   int socket_desc;

@@ -10,6 +10,7 @@
 #include <sys/types.h>
 #include <libgen.h>
 #include "write_handler.h"
+#include "../utilities/directory-lib.h"
 
 
 void write_controller(char *client_message , int client_sock){
@@ -63,25 +64,33 @@ void handle_write_command(int client_sock, const char *remote_path, const char *
     char *dirname_result = dirname(dir_path);
     char *basename_result = basename(filename);
 
+    // Get the current working directory
+    char base_directory[256];
+    if (getcwd(base_directory, sizeof(base_directory)) == NULL)
+    {
+            perror("Error getting current working directory");
+            return;
+    }
+
     // Open or create the remote file for writing:
     int remote_file;
 
     // Create directories if they don't exist
-    if (mkdirp(dirname_result) == 0) {
+    if (mkdirp(base_directory, dirname_result) == 0) {
         remote_file = open(remote_path, O_WRONLY | O_CREAT | O_TRUNC, 0666);
     } else {
-        perror("Error creating directories");
-        strcpy(server_message, "Error creating directories");
+        perror("Error creating directories\n");
+        strcpy(server_message, "Error creating directories\n");
         remote_file = -1;  // Set remote_file to an invalid value
     }
 
     if (remote_file >= 0) {
         // Write the content to the remote file:
         if (write(remote_file, file_content, strlen(file_content)) < 0) {
-            perror("Error writing to remote file");
-            strcpy(server_message, "Error writing to remote file");
+            perror("Error writing to remote file\n");
+            strcpy(server_message, "Error writing to remote file\n");
         } else {
-            strcpy(server_message, "File successfully stored on remote server");
+            strcpy(server_message, "File successfully stored on remote server\n");
         }
 
         close(remote_file);
@@ -96,40 +105,4 @@ void handle_write_command(int client_sock, const char *remote_path, const char *
     printf("Server's response: %s\n", server_message);
 }
 
-/**
- * Checks if path exists and manages directory creation.
-*/
-int mkdirp(const char *path) {
-    char *p = NULL;
-    char *sp = NULL;
-    int status;
 
-    char *copy = strdup(path);
-
-    status = 0;
-    p = copy;
-
-    while (status == 0 && (sp = strchr(p, '/')) != NULL) {
-        if (sp != p) {
-            *sp = '\0';
-            // Check if the path already exists and is not a directory
-            struct stat st;
-            if (stat(copy, &st) != 0 || !S_ISDIR(st.st_mode)) {
-                status = mkdir(copy, S_IRWXU);
-            }
-            *sp = '/';
-        }
-        p = sp + 1;
-    }
-
-    if (status == 0) {
-        // Check if the final path already exists and is not a directory
-        struct stat st;
-        if (stat(copy, &st) != 0 || !S_ISDIR(st.st_mode)) {
-            status = mkdir(copy, S_IRWXU);
-        }
-    }
-
-    free(copy);
-    return status;
-}

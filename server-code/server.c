@@ -9,7 +9,9 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <libgen.h>
-#include "write_handler.h"
+#include "handlers/write_handler.h"
+#include "handlers/get_handler.h"
+#include "handlers/rm_handler.h"
 
 void *handle_client(void *arg);
 
@@ -67,7 +69,7 @@ int main(void)
     int *client_sock_copy = malloc(sizeof(int));
     if (client_sock_copy == NULL)
     {
-      perror("Error allocating memory for client_sock_copy");
+      perror("Error allocating memory for client_sock_copy\n");
       close(client_sock);
       continue;
     }
@@ -76,7 +78,7 @@ int main(void)
 
     if (pthread_create(&thread, NULL, handle_client, (void *)client_sock_copy) != 0)
     {
-      perror("Thread creation failed");
+      perror("Thread creation failed\n");
       free(client_sock_copy);
       close(client_sock);
     }
@@ -107,10 +109,16 @@ void *handle_client(void *arg)
     return NULL;
   }
 
-  // Check if the received message is a "WRITE" command:
+  // Check if the received message is a "WRITE , RM , LS , GET" command:
   if (strncmp(client_message, "WRITE", 5) == 0)
   {
      write_controller(client_message , client_sock);
+  }else if(strncmp(client_message, "GET", 3) == 0){
+     get_controller(client_message , client_sock);
+  }else if(strncmp(client_message, "RM", 2) == 0){
+     rm_controller(client_message , client_sock);
+  }else if(strncmp(client_message, "LS", 2) == 0){
+    // ls_controller(client_message , client_sock);
   }
    
   // Closing the socket:
