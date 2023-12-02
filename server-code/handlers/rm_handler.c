@@ -33,6 +33,48 @@ void handle_rm_command(int client_sock, const char *remote_path) {
 
     char server_message[8196];
 
+
+    // Extract directory path and filename
+    char dir_path[256];
+    char filename[256];
+
+    strncpy(dir_path, remote_path, sizeof(dir_path));
+    strncpy(filename, remote_path, sizeof(filename));
+
+    char *dirname_result = dirname(dir_path);
+    char *basename_result = basename(filename);
+
+    // Get the current working directory
+    char base_directory[256];
+    if (getcwd(base_directory, sizeof(base_directory)) == NULL)
+    {
+            perror("Error getting current working directory");
+            return;
+    }
+
+    // Check if the file already exists
+    int version = 1;
+    char versioned_filename[256];
+
+    char new_remote_path[1024];
+
+    do {
+        snprintf(versioned_filename, sizeof(versioned_filename), "%s_v%d", basename_result, version);
+        // Use a separate variable for the new path
+        snprintf(new_remote_path, sizeof(new_remote_path), "%s/%s", dirname_result, versioned_filename);
+
+        version++;
+    } while (access(new_remote_path, F_OK) != -1);
+
+    // latest version
+    version = version - 2;
+    snprintf(versioned_filename, sizeof(versioned_filename), "%s_v%d", basename_result, version);
+    // Use a separate variable for the new path
+    snprintf(new_remote_path, sizeof(new_remote_path), "%s/%s", dirname_result, versioned_filename);
+
+    // Copy the new path to remote_path
+    strcpy(remote_path, new_remote_path);
+
     // Attempt to remove the file
     if (remove(remote_path) == 0) {
         // File removal successful, send success message to client

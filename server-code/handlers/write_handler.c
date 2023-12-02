@@ -72,6 +72,23 @@ void handle_write_command(int client_sock, const char *remote_path, const char *
             return;
     }
 
+
+    // Check if the file already exists
+    int version = 1;
+    char versioned_filename[256];
+
+    do {
+
+        snprintf(versioned_filename, sizeof(versioned_filename), "%s_v%d", basename_result, version);
+        // Use a separate variable for the new path
+        char new_remote_path[1024];
+        snprintf(new_remote_path, sizeof(new_remote_path), "%s/%s", dirname_result, versioned_filename);
+
+        strcpy(remote_path, new_remote_path);
+
+        version++;
+    } while (access(remote_path, F_OK) != -1);
+
     // Open or create the remote file for writing:
     int remote_file;
 
