@@ -13,7 +13,7 @@
 
  - Go to client-code project if you want to run the file-server-client
  - Do ```make clean``` , then ```make rfs```. You should see a rfs binary created.
- - You need ```client-file-system`` directory in client-code (client file system root)
+ - You need ```client-file-system``` directory in client-code (client file system root)
  - Do ```./rfs CMD <filepath> ...``` to run the client command , which starts sending requst over socket connection on port 8080.
 
   ## Different commands supported on server
