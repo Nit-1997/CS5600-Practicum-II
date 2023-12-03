@@ -13,45 +13,64 @@ int main(int argc, char *argv[])
   char cmd[812];
   char remote_file_name[812];
   char local_file_name[812];
+  char version_info[812];
 
-  if (argc != 4){
-    if(argc != 3){
-         fprintf(stderr, "Usage: %s WRITE/GET/RM/LS local-file-path remote-file-path\n or just remote-file-path", argv[0]);
-         return -1;
-    }else{
-            strncpy(cmd, argv[1], sizeof(cmd) - 1);
-            cmd[sizeof(cmd) - 1] = '\0';
-
-            if(strcmp(cmd , "RM") == 0 || strcmp(cmd , "LS") == 0){
-              strncpy(remote_file_name, argv[2], sizeof(remote_file_name) - 1);
-              remote_file_name[sizeof(remote_file_name) - 1] = '\0';
-            }else{
-              strncpy(local_file_name, argv[2], sizeof(local_file_name) - 1);
-              local_file_name[sizeof(local_file_name) - 1] = '\0'; 
-
-              strncpy(remote_file_name, argv[2], sizeof(remote_file_name) - 1);
-              remote_file_name[sizeof(remote_file_name) - 1] = '\0';
-            }
-    }
-  }else{
+   printf("%d\n",argc);
+  
+  if(argc == 5){
     strncpy(cmd, argv[1], sizeof(cmd) - 1);
     cmd[sizeof(cmd) - 1] = '\0';
-    
-    if(strcmp(cmd , "GET") == 0){
-      strncpy(local_file_name, argv[3], sizeof(local_file_name) - 1);
-      local_file_name[sizeof(local_file_name) - 1] = '\0'; 
 
-      strncpy(remote_file_name, argv[2], sizeof(remote_file_name) - 1);
-      remote_file_name[sizeof(remote_file_name) - 1] = '\0';
+    strncpy(version_info, argv[4], sizeof(version_info) - 1);
+    version_info[sizeof(version_info) - 1] = '\0'; 
+
+    strncpy(local_file_name, argv[3], sizeof(local_file_name) - 1);
+    local_file_name[sizeof(local_file_name) - 1] = '\0'; 
+
+    strncpy(remote_file_name, argv[2], sizeof(remote_file_name) - 1);
+    remote_file_name[sizeof(remote_file_name) - 1] = '\0';
+
+  }else if(argc == 4){
+    // PULL out the command
+    strncpy(cmd, argv[1], sizeof(cmd) - 1);
+    cmd[sizeof(cmd) - 1] = '\0';
+
+     if(strcmp(cmd , "GET") == 0){
+        // GET remote -> local
+        strncpy(local_file_name, argv[3], sizeof(local_file_name) - 1);
+        local_file_name[sizeof(local_file_name) - 1] = '\0'; 
+
+        strncpy(remote_file_name, argv[2], sizeof(remote_file_name) - 1);
+        remote_file_name[sizeof(remote_file_name) - 1] = '\0';
+     }else {
+        // WRITE local -> remote
+        strncpy(local_file_name, argv[2], sizeof(local_file_name) - 1);
+        local_file_name[sizeof(local_file_name) - 1] = '\0'; 
+
+        strncpy(remote_file_name, argv[3], sizeof(remote_file_name) - 1);
+        remote_file_name[sizeof(remote_file_name) - 1] = '\0';
+
+     }
+  }else if(argc == 3){
+    //PULL out the command
+    strncpy(cmd, argv[1], sizeof(cmd) - 1);
+    cmd[sizeof(cmd) - 1] = '\0';
+
+    if(strcmp(cmd , "RM") == 0 || strcmp(cmd , "LS") == 0){
+        // All LS and RM cases
+        strncpy(remote_file_name, argv[2], sizeof(remote_file_name) - 1);
+        remote_file_name[sizeof(remote_file_name) - 1] = '\0';
     }else{
-      // simple write case
-      strncpy(local_file_name, argv[2], sizeof(local_file_name) - 1);
-      local_file_name[sizeof(local_file_name) - 1] = '\0'; 
+      // WRITE or GET using  1 arg only
+        strncpy(local_file_name, argv[2], sizeof(local_file_name) - 1);
+        local_file_name[sizeof(local_file_name) - 1] = '\0'; 
 
-      strncpy(remote_file_name, argv[3], sizeof(remote_file_name) - 1);
-      remote_file_name[sizeof(remote_file_name) - 1] = '\0';
-
+        strncpy(remote_file_name, argv[2], sizeof(remote_file_name) - 1);
+        remote_file_name[sizeof(remote_file_name) - 1] = '\0';
     }
+  }else{
+    fprintf(stderr, "Usage: %s WRITE/GET/RM/LS local-file-path remote-file-path\n or just remote-file-path", argv[0]);
+    return -1;
   }
 
   int socket_desc;
@@ -90,7 +109,11 @@ int main(int argc, char *argv[])
   }else if(strcmp(cmd , "GET") == 0){
     char full_local_path[1024];
     snprintf(full_local_path, sizeof(full_local_path), "client-file-system/%s", local_file_name);
-    send_get_command(socket_desc, full_local_path, remote_file_name);
+    if(argc == 4){
+      send_get_command(socket_desc, full_local_path, remote_file_name, NULL);
+    }else{
+      send_get_command(socket_desc, full_local_path, remote_file_name , version_info);
+    }
   }else if(strcmp(cmd , "RM") == 0) {
     send_rm_command(socket_desc, remote_file_name);
   }else {

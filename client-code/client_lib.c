@@ -13,7 +13,7 @@
 #include "utilities/directory-lib.h"
 
 
-void send_get_command(int socket_desc, const char *local_path, const char *remote_path)
+void send_get_command(int socket_desc, const char *local_path, const char *remote_path , const char* version)
 {  
   char client_message[8196];
   char server_response[8196];
@@ -22,9 +22,12 @@ void send_get_command(int socket_desc, const char *local_path, const char *remot
   memset(client_message, '\0', sizeof(client_message));
   memset(server_response, '\0', sizeof(server_response));
 
-
-  // Construct the "WRITE" command with remote path and file content:
-  snprintf(client_message, sizeof(client_message), "GET %s", remote_path);
+  if(version == NULL){
+    // Construct the "WRITE" command with remote path and file content:
+    snprintf(client_message, sizeof(client_message), "GET %s", remote_path);
+  }else{
+    snprintf(client_message, sizeof(client_message), "GET %s\n%s", remote_path , version);
+  }
 
   printf("Sending this client message to the server\n");
   fflush(stdout);
@@ -94,11 +97,7 @@ void send_get_command(int socket_desc, const char *local_path, const char *remot
     }
 
     // Print the server's response:
-    printf("Client's message: %s\n", client_message);
-
-  
-
-   
+    printf("Client's message: %s\n", client_message);   
 }
 
 void send_rm_command(int socket_desc, const char *remote_path)
@@ -136,7 +135,35 @@ void send_rm_command(int socket_desc, const char *remote_path)
 
 void send_ls_command(int socket_desc, const char *remote_path)
 {
-   printf("Will send ls command in future ...");
+  char client_message[8196];
+  char server_response[8196];
+
+  // Clean buffers:
+  memset(client_message, '\0', sizeof(client_message));
+  memset(server_response, '\0', sizeof(server_response));
+
+
+  // Construct the "LS" command with remote path and file content:
+  snprintf(client_message, sizeof(client_message), "LS %s", remote_path);
+
+  printf("Sending this client message to the server\n");
+  printf("%s" , client_message);
+
+  // Send the command to the server:
+  if (send(socket_desc, client_message, strlen(client_message), 0) < 0)
+  {
+    perror("Unable to send command to server");
+    return;
+  }
+
+  // Receive the server's response:
+  if (recv(socket_desc, server_response, sizeof(server_response), 0) < 0)
+  {
+    perror("Error while receiving server's response");
+    return;
+  }
+
+  printf("Server's response: \n%s\n", server_response);
 }
 
 
