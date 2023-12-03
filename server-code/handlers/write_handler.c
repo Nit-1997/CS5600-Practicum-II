@@ -4,6 +4,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/file.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <sys/stat.h>
@@ -15,9 +16,9 @@
 
 void write_controller(char *client_message , int client_sock){
     // Extract the remote path and file content from the command:
-    char command[10];   // Variable for "WRITE command"
-    char filename[100];  // Variable for "filename"
-    char content[1000];  // Variable for the remaining content
+    char command[10];   
+    char filename[100];  
+    char content[1000];  
 
 
     // Use sscanf to extract the values
@@ -103,14 +104,28 @@ void handle_write_command(int client_sock, const char *remote_path, const char *
 
     if (remote_file >= 0) {
         // Write the content to the remote file:
-        if (write(remote_file, file_content, strlen(file_content)) < 0) {
-            perror("Error writing to remote file\n");
-            strcpy(server_message, "Error writing to remote file\n");
-        } else {
-            strcpy(server_message, "File successfully stored on remote server\n");
-        }
+         
+         // Acquire a write lock when writing to the file.
+         if (flock(remote_file, LOCK_EX) == -1) {
+            perror("Error acquiring file lock\n");
+            strcpy(server_message, "Error acquiring file lock\n");
+            close(remote_file);
+         } else {
+            if (write(remote_file, file_content, strlen(file_content)) < 0) {
+                perror("Error writing to remote file\n");
+                strcpy(server_message, "Error writing to remote file\n");
+            } else {
+                strcpy(server_message, "File successfully stored on remote server\n");
+            }
 
-        close(remote_file);
+            // Release the file lock
+            if (flock(remote_file, LOCK_UN) == -1) {
+                perror("Error releasing file lock\n");
+                // Handle the error if needed
+            }
+
+            close(remote_file);
+         }
     }
 
     // Respond to the client with the result:

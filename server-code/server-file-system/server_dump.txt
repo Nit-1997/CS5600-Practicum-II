@@ -1,0 +1,2 @@
+This is a server dump file.
+You can use this for testing, pull it to from the client and save it there.

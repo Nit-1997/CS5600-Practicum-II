@@ -9,15 +9,30 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <libgen.h>
+#include <signal.h>
 #include "handlers/write_handler.h"
 #include "handlers/get_handler.h"
 #include "handlers/rm_handler.h"
 #include "handlers/ls_handler.h"
 
+#define errExit(msg)    \
+  do {                  \
+    perror(msg);        \
+    exit(EXIT_FAILURE); \
+  } while (0)
+
+static void sigintHandler(int sig) {
+  fflush(stdout);
+  fprintf(stderr, "Caught SIGINT! exiting and flushing out any messages\n");
+  exit(EXIT_FAILURE);
+}
+
 void *handle_client(void *arg);
 
 int main(void)
 {
+  if (signal(SIGINT, sigintHandler) == SIG_ERR) errExit("signal SIGINT");
+
   int socket_desc, client_sock;
   socklen_t client_size;
   struct sockaddr_in server_addr, client_addr;
@@ -85,10 +100,15 @@ int main(void)
   }
 
   close(socket_desc);
-
+  
+  exit(EXIT_SUCCESS);
   return 0;
 }
 
+
+/**
+ * Handles client on each thread and calls the relevant handler. 
+*/
 void *handle_client(void *arg)
 {
   int client_sock = *((int *)arg);

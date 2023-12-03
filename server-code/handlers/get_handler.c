@@ -8,15 +8,16 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/file.h>
 #include <libgen.h>
 #include "get_handler.h"
 
 
 void get_controller(char *client_message , int client_sock){
     // Extract the remote path and file content from the command:
-    char command[10];   // Variable for "GET command"
-    char filename[100];  // Variable for "filename"
-    char version[20]; // version information
+    char command[10];   
+    char filename[100];  
+    char version[20]; 
 
     // Use sscanf to extract the values
     if (sscanf(client_message, "%s %s\n", command, filename) != 2) {
@@ -142,10 +143,16 @@ void handle_get_command(int client_sock, const char *remote_path , const char* v
     
     // Read the content from the remote file:
     FILE *remote_file = fopen(remote_path, "rb");
+    if (remote_file == NULL) {
+        perror("Error opening remote file for reading\n");
+        return;
+    }
 
-    if (remote_file == NULL)
-    {
-        perror("Error opening remote file\n");
+    // Use LOCK_SH for a shared (read) lock on the remote file
+    int fd = fileno(remote_file);
+    if (flock(fd, LOCK_SH) == -1) {
+        perror("Error acquiring file lock\n");
+        fclose(remote_file);
         return;
     }
 
@@ -155,16 +162,22 @@ void handle_get_command(int client_sock, const char *remote_path , const char* v
 
     char *file_content = malloc(file_size + 1);
     fread(file_content, 1, file_size, remote_file);
-    fclose(remote_file);
     file_content[file_size] = '\0';
-   
-    // Construct the "WRITE" command with remote path and file content:
+
+    // Release the read lock
+    if (flock(fd, LOCK_UN) == -1) {
+        perror("Error releasing file lock\n");
+        // Handle the error if needed
+    }
+
+    fclose(remote_file); // Close the file using fclose
+
     snprintf(server_message, sizeof(server_message), "%s", file_content);
 
-    // Send the command to the server:
+    // Send the response to the client:
     if (write(client_sock, server_message, strlen(server_message)) < 0)
     {
-        perror("Unable to send command to server\n");
+        perror("Unable to send response to client\n");
         free(file_content);
         return;
     }

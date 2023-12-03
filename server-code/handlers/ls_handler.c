@@ -14,8 +14,8 @@
 
 void ls_controller(char *client_message , int client_sock){
     // Extract the remote path and file content from the command:
-    char command[10];   // Variable for "LS command"
-    char filename[100];  // Variable for "filename"
+    char command[10];   
+    char filename[100];  
 
     // Use sscanf to extract the values
     if (sscanf(client_message, "%s %s\n", command, filename) != 2) {
