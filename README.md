@@ -6,12 +6,14 @@
  - Go to server-code project if you want to run the file-server
  - Do ```make clean``` , then ```make server```. You should see a server binary created.
  - Do ```./server``` to run the server , which starts accepting socket connections on port 8080.
+ - You need ```server-file-system`` directory in server-code (server file system root)
 
 
 # How to Run File Client
 
  - Go to client-code project if you want to run the file-server-client
  - Do ```make clean``` , then ```make rfs```. You should see a rfs binary created.
+ - You need ```client-file-system`` directory in client-code (client file system root)
  - Do ```./rfs CMD <filepath> ...``` to run the client command , which starts sending requst over socket connection on port 8080.
 
   ## Different commands supported on server
@@ -20,6 +22,7 @@
   -  ```./rfs WRITE <local-file-path> ``` , writes the content of local file to remote server at the same local path.
   - ```./rfs GET <remote-file-path> <local-file-path> ``` , writes the content of remote file to local file system at the given path.
   -  ```./rfs GET <local-file-path> ``` , writes the content of remote file to local file system at the same local path.
+  -  ```./rfs GET <local-file-path> <version_number>``` , writes the content of remote file to local file system at the same local path using the integer version number.
   - ```./rfs RM <remote-file-path> ``` , deletes the content of remote file and the file at the given path on server.
   -  ```./rfs LS <remote-file-path> ``` , fetches the versioned information of remote file on the server.
 
@@ -37,7 +40,10 @@
    - ```client-lib.c``` : Consists of command parsers for each type of commands and talks to the server and executes the specific operation.
 
 # Handling Concurrency in multithreading 
-  TODO   
+   - Shared read locks applied on read operations on files.
+   - Exclusive write locks applied on write operations on files.
+
+
 
 
 
