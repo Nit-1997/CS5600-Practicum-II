@@ -12,9 +12,9 @@
 #include "handlers/write_handler.h"
 #include "handlers/get_handler.h"
 #include "handlers/rm_handler.h"
+#include "handlers/ls_handler.h"
 
 void *handle_client(void *arg);
-
 
 int main(void)
 {
@@ -112,19 +112,23 @@ void *handle_client(void *arg)
   // Check if the received message is a "WRITE , RM , LS , GET" command:
   if (strncmp(client_message, "WRITE", 5) == 0)
   {
-     write_controller(client_message , client_sock);
-  }else if(strncmp(client_message, "GET", 3) == 0){
-     get_controller(client_message , client_sock);
-  }else if(strncmp(client_message, "RM", 2) == 0){
-     rm_controller(client_message , client_sock);
-  }else if(strncmp(client_message, "LS", 2) == 0){
-    // ls_controller(client_message , client_sock);
+    write_controller(client_message, client_sock);
   }
-   
+  else if (strncmp(client_message, "GET", 3) == 0)
+  {
+    get_controller(client_message, client_sock);
+  }
+  else if (strncmp(client_message, "RM", 2) == 0)
+  {
+    rm_controller(client_message, client_sock);
+  }
+  else if (strncmp(client_message, "LS", 2) == 0)
+  {
+    ls_controller(client_message, client_sock);
+  }
+
   // Closing the socket:
   close(client_sock);
 
   return NULL;
 }
-
-

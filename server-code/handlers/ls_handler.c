@@ -14,122 +14,93 @@
 
 void ls_controller(char *client_message , int client_sock){
     // Extract the remote path and file content from the command:
-    // char command[10];   // Variable for "WRITE command"
-    // char filename[100];  // Variable for "filename"
-    // char content[1000];  // Variable for the remaining content
+    char command[10];   // Variable for "LS command"
+    char filename[100];  // Variable for "filename"
 
+    // Use sscanf to extract the values
+    if (sscanf(client_message, "%s %s\n", command, filename) != 2) {
+        fprintf(stderr, "Invalid input format.\n");
+        return 1;
+    }
 
-    // // Use sscanf to extract the values
-    // if (sscanf(client_message, "%s %s\n", command, filename) != 2) {
-    //     fprintf(stderr, "Invalid input format.\n");
-    //     return 1;
-    // }
+    char full_remote_path[1024];
+    snprintf(full_remote_path, sizeof(full_remote_path), "server-file-system/%s", filename);
 
-    // char *contentStart = strchr(client_message, '\n');
-    // if (contentStart == NULL) {
-    //     fprintf(stderr, "Invalid input format. No newline found.\n");
-    //     return 1;
-    // }
-    // contentStart++;  // Move to the first character after the newline
-
-    // // Copy the content character by character
-    // size_t i = 0;
-    // while (contentStart[i] != '\0') {
-    //     content[i] = contentStart[i];
-    //     i++;
-    // }
-    // content[i] = '\0';  // Null-terminate the content
-    
-    // char full_remote_path[1024];
-    // snprintf(full_remote_path, sizeof(full_remote_path), "server-file-system/%s", filename);
-
-    // // Handle the "WRITE" command:
-    // handle_write_command(client_sock, full_remote_path, content);
+    handle_ls_command(client_sock , full_remote_path);
 }
 
 void handle_ls_command(int client_sock, const char *remote_path) {
-    // char server_message[8196];
 
-    // // Clean buffer:
-    // memset(server_message, '\0', sizeof(server_message));
+    char server_message[8196];
 
-    // // Extract directory path and filename
-    // char dir_path[256];
-    // char filename[256];
 
-    // strncpy(dir_path, remote_path, sizeof(dir_path));
-    // strncpy(filename, remote_path, sizeof(filename));
+    // Extract directory path and filename
+    char dir_path[256];
+    char filename[256];
 
-    // char *dirname_result = dirname(dir_path);
-    // char *basename_result = basename(filename);
+    strncpy(dir_path, remote_path, sizeof(dir_path));
+    strncpy(filename, remote_path, sizeof(filename));
 
-    // // Open or create the remote file for writing:
-    // int remote_file;
+    char *dirname_result = dirname(dir_path);
+    char *basename_result = basename(filename);
 
-    // // Create directories if they don't exist
-    // if (mkdirp(dirname_result) == 0) {
-    //     remote_file = open(remote_path, O_WRONLY | O_CREAT | O_TRUNC, 0666);
-    // } else {
-    //     perror("Error creating directories");
-    //     strcpy(server_message, "Error creating directories");
-    //     remote_file = -1;  // Set remote_file to an invalid value
-    // }
-
-    // if (remote_file >= 0) {
-    //     // Write the content to the remote file:
-    //     if (write(remote_file, file_content, strlen(file_content)) < 0) {
-    //         perror("Error writing to remote file");
-    //         strcpy(server_message, "Error writing to remote file");
-    //     } else {
-    //         strcpy(server_message, "File successfully stored on remote server");
-    //     }
-
-    //     close(remote_file);
-    // }
-
-    // // Respond to the client with the result:
-    // if (send(client_sock, server_message, strlen(server_message), 0) < 0) {
-    //     perror("Can't send response\n");
-    // }
-
-    // // Print the server's response:
-    // printf("Server's response: %s\n", server_message);
-}
-
-/**
- * Checks if path exists and manages directory creation.
-*/
-int mkdirp(const char *path) {
-    char *p = NULL;
-    char *sp = NULL;
-    int status;
-
-    char *copy = strdup(path);
-
-    status = 0;
-    p = copy;
-
-    while (status == 0 && (sp = strchr(p, '/')) != NULL) {
-        if (sp != p) {
-            *sp = '\0';
-            // Check if the path already exists and is not a directory
-            struct stat st;
-            if (stat(copy, &st) != 0 || !S_ISDIR(st.st_mode)) {
-                status = mkdir(copy, S_IRWXU);
-            }
-            *sp = '/';
-        }
-        p = sp + 1;
+    // Get the current working directory
+    char base_directory[256];
+    if (getcwd(base_directory, sizeof(base_directory)) == NULL)
+    {
+            perror("Error getting current working directory");
+            return;
     }
 
-    if (status == 0) {
-        // Check if the final path already exists and is not a directory
+    // Check if the file already exists
+    int version = 1;
+    char versioned_filename[256];
+
+    // Array to store versioned filenames
+    char versioned_filenames[50][256];  // Right now limited to 50 versions only.
+    int num_versions = 0;
+
+    char new_remote_path[1024];
+
+    do {
+        snprintf(versioned_filename, sizeof(versioned_filename), "%s_v%d", basename_result, version);
+        // Use a separate variable for the new path
+        snprintf(new_remote_path, sizeof(new_remote_path), "%s/%s", dirname_result, versioned_filename);
+        if (access(new_remote_path, F_OK) != -1) {
+             // Store the versioned filename in the array only if it exists
+             strncpy(versioned_filenames[num_versions], versioned_filename, sizeof(versioned_filenames[num_versions]));
+             num_versions++;
+        }
+        version++;
+    } while (access(new_remote_path, F_OK) != -1);
+
+    strcpy(remote_path, new_remote_path);
+
+
+    // Concatenate versioned filenames and timestamps into server_message using stats library
+    snprintf(server_message, sizeof(server_message), "version info:\n");
+    for (int i = 0; i < num_versions; i++) {
         struct stat st;
-        if (stat(copy, &st) != 0 || !S_ISDIR(st.st_mode)) {
-            status = mkdir(copy, S_IRWXU);
+        // building the fullpath using dirname and filename for stats function.
+        char full_path[1024];
+        snprintf(full_path, sizeof(full_path), "%s/%s", dirname_result, versioned_filenames[i]);
+
+        if (stat(full_path, &st) == 0) {
+            char timestamp[20];
+            strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", localtime(&st.st_mtime));
+            strncat(server_message, versioned_filenames[i], sizeof(server_message) - strlen(server_message) - 1);
+            strncat(server_message, " - Last modified: ", sizeof(server_message) - strlen(server_message) - 1);
+            strncat(server_message, timestamp, sizeof(server_message) - strlen(server_message) - 1);
+            strncat(server_message, "\n", sizeof(server_message) - strlen(server_message) - 1);
+        } else {
+            perror("Error getting file information"); // if directory / file version access not granted / does not exist
         }
     }
 
-    free(copy);
-    return status;
+    // Send the command result to the client
+    if (send(client_sock, server_message, strlen(server_message), 0) < 0) {
+        perror("Unable to send command result to client\n");
+    }
+        
 }
+
