@@ -58,30 +58,27 @@ void handle_rm_command(int client_sock, const char *remote_path) {
 
     char new_remote_path[1024];
 
-    do {
+    // go through each version and remove it.
+    while(1){
         snprintf(versioned_filename, sizeof(versioned_filename), "%s_v%d", basename_result, version);
         // Use a separate variable for the new path
         snprintf(new_remote_path, sizeof(new_remote_path), "%s/%s", dirname_result, versioned_filename);
-
-        version++;
-    } while (access(new_remote_path, F_OK) != -1);
-
-    // latest version
-    version = version - 2;
-    snprintf(versioned_filename, sizeof(versioned_filename), "%s_v%d", basename_result, version);
-    // Use a separate variable for the new path
-    snprintf(new_remote_path, sizeof(new_remote_path), "%s/%s", dirname_result, versioned_filename);
-
-    // Copy the new path to remote_path
-    strcpy(remote_path, new_remote_path);
-
-    // Attempt to remove the file
-    if (remove(remote_path) == 0) {
-        // File removal successful, send success message to client
-        snprintf(server_message, sizeof(server_message), "File %s removed successfully.\n", remote_path);
-    } else {
-        // File removal failed, send error message to client
-        snprintf(server_message, sizeof(server_message), "Error removing file %s.\n", remote_path);
+    
+        if(access(new_remote_path, F_OK) != -1){
+            // Attempt to remove the file
+            if (access(new_remote_path, F_OK) != -1 && remove(new_remote_path) == 0) {
+                // File removal successful, send success message to client
+                snprintf(server_message, sizeof(server_message), "File %s removed successfully.\n", new_remote_path);
+                version++;
+            } else {
+                // File removal failed, send error message to client
+                snprintf(server_message, sizeof(server_message), "Error removing file %s.\n", new_remote_path);
+                break;
+            }
+        }else{
+            snprintf(server_message, sizeof(server_message), "Error removing file %s.\n", new_remote_path);
+            break;
+        }
     }
 
     // Send the command result to the client

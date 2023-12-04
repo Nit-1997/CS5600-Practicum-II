@@ -23,7 +23,7 @@
   - ```./rfs GET <remote-file-path> <local-file-path> ``` , writes the content of remote file to local file system at the given path.
   -  ```./rfs GET <local-file-path> ``` , writes the content of remote file to local file system at the same local path.
   -  ```./rfs GET <local-file-path> <version_number>``` , writes the content of remote file to local file system at the same local path using the integer version number.
-  - ```./rfs RM <remote-file-path> ``` , deletes the content of remote file and the file at the given path on server.
+  - ```./rfs RM <remote-file-path> ``` , deletes the content of remote file and the file at the given path on server (all versions).
   -  ```./rfs LS <remote-file-path> ``` , fetches the versioned information of remote file on the server.
 
 
