@@ -2,10 +2,32 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <netinet/in.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include "client_lib.h"
 
+#define CONFIG_FILE "config.ini"
+
+typedef struct {
+    char ip_address[15]; 
+    int port;
+} ServerConfig;
+
+ServerConfig read_config() {
+    ServerConfig config;
+    FILE *file = fopen(CONFIG_FILE, "r");
+
+    if (file == NULL) {
+        perror("Error opening config file");
+        exit(EXIT_FAILURE);
+    }
+
+    fscanf(file, "[server]\nip_address = %s\nport = %d", config.ip_address, &config.port);
+
+    fclose(file);
+    return config;
+}
 
 int main(int argc, char *argv[])
 {
@@ -14,15 +36,16 @@ int main(int argc, char *argv[])
   char remote_file_name[812];
   char local_file_name[812];
   char version_info[812];
+  int version_set = 0;
 
-   printf("%d\n",argc);
-  
+   
   if(argc == 5){
     strncpy(cmd, argv[1], sizeof(cmd) - 1);
     cmd[sizeof(cmd) - 1] = '\0';
 
     strncpy(version_info, argv[4], sizeof(version_info) - 1);
     version_info[sizeof(version_info) - 1] = '\0'; 
+    version_set = 1;
 
     strncpy(local_file_name, argv[3], sizeof(local_file_name) - 1);
     local_file_name[sizeof(local_file_name) - 1] = '\0'; 
@@ -73,6 +96,8 @@ int main(int argc, char *argv[])
     return -1;
   }
 
+  ServerConfig config = read_config();
+
   int socket_desc;
   struct sockaddr_in server_addr;
 
@@ -86,11 +111,12 @@ int main(int argc, char *argv[])
   }
 
   printf("Socket created successfully\n");
+  printf("Establishing connection with server @ %s : %d\n" , config.ip_address , config.port);
 
   // Set port and IP the same as server-side:
   server_addr.sin_family = AF_INET;
-  server_addr.sin_port = htons(8081);
-  server_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+  server_addr.sin_port = config.port;
+  server_addr.sin_addr.s_addr = inet_addr(config.ip_address);
 
   // Send connection request to server:
   if (connect(socket_desc, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
@@ -107,12 +133,32 @@ int main(int argc, char *argv[])
     snprintf(full_local_path, sizeof(full_local_path), "client-file-system/%s", local_file_name);
     send_write_command(socket_desc, full_local_path, remote_file_name);
   }else if(strcmp(cmd , "GET") == 0){
-    char full_local_path[1024];
-    snprintf(full_local_path, sizeof(full_local_path), "client-file-system/%s", local_file_name);
     if(argc == 4){
-      send_get_command(socket_desc, full_local_path, remote_file_name, NULL);
-    }else{
-      send_get_command(socket_desc, full_local_path, remote_file_name , version_info);
+      // Check if local_file_name is a number
+        int is_number = 1;
+        for (size_t i = 0; i < strlen(local_file_name); i++) {
+            if (!isdigit((unsigned char)local_file_name[i])) {
+                is_number = 0;  // Not a number
+                break;
+            }
+        }
+        if (is_number) {
+            char full_local_path[1024];
+            snprintf(full_local_path, sizeof(full_local_path), "client-file-system/%s", remote_file_name);
+            send_get_command(socket_desc, full_local_path, remote_file_name, local_file_name); 
+        } else {
+          char full_local_path[1024];
+          snprintf(full_local_path, sizeof(full_local_path), "client-file-system/%s", local_file_name);
+          send_get_command(socket_desc, full_local_path, remote_file_name, NULL);    
+        }
+    }else {
+      char full_local_path[1024];
+      snprintf(full_local_path, sizeof(full_local_path), "client-file-system/%s", local_file_name);
+      if(version_set == 0){
+        send_get_command(socket_desc, full_local_path, remote_file_name , NULL);
+      }else{
+        send_get_command(socket_desc, full_local_path, remote_file_name , version_info);
+      }
     }
   }else if(strcmp(cmd , "RM") == 0) {
     send_rm_command(socket_desc, remote_file_name);

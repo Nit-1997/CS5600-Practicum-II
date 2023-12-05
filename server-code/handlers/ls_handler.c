@@ -48,7 +48,7 @@ void handle_ls_command(int client_sock, const char *remote_path) {
     char base_directory[256];
     if (getcwd(base_directory, sizeof(base_directory)) == NULL)
     {
-            perror("Error getting current working directory");
+            perror("Error getting current working directory\n");
             return;
     }
 

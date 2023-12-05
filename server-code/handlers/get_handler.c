@@ -65,7 +65,7 @@ char* findLatestVersion(const char *remote_path){
     char base_directory[256];
     if (getcwd(base_directory, sizeof(base_directory)) == NULL)
     {
-            perror("Error getting current working directory");
+            perror("Error getting current working directory\n");
             return;
     }
 
@@ -110,7 +110,7 @@ const char* findSpecificVersion(const char *remote_path , const char* version){
     char base_directory[256];
     if (getcwd(base_directory, sizeof(base_directory)) == NULL)
     {
-            perror("Error getting current working directory");
+            perror("Error getting current working directory\n");
             return;
     }
     char new_remote_path[1024];
@@ -144,7 +144,13 @@ void handle_get_command(int client_sock, const char *remote_path , const char* v
     // Read the content from the remote file:
     FILE *remote_file = fopen(remote_path, "rb");
     if (remote_file == NULL) {
+        snprintf(server_message, sizeof(server_message), "File does not exist on remote server\n");
         perror("Error opening remote file for reading\n");
+        if (write(client_sock, server_message, strlen(server_message)) < 0)
+        {
+            perror("Unable to send response to client\n");
+            return;
+        }
         return;
     }
 
@@ -153,6 +159,12 @@ void handle_get_command(int client_sock, const char *remote_path , const char* v
     if (flock(fd, LOCK_SH) == -1) {
         perror("Error acquiring file lock\n");
         fclose(remote_file);
+        snprintf(server_message, sizeof(server_message), "Internal Server Error\n");
+        if (write(client_sock, server_message, strlen(server_message)) < 0)
+        {
+            perror("Unable to send response to client\n");
+            return;
+        }
         return;
     }
 

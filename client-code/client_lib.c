@@ -30,25 +30,27 @@ void send_get_command(int socket_desc, const char *local_path, const char *remot
   }
 
   printf("Sending this client message to the server\n");
-  fflush(stdout);
-  printf("%s" , client_message);
-  fflush(stdout);
-
+  printf("%s\n" , client_message);
+  
   // Send the command to the server:
   if (write(socket_desc, client_message, strlen(client_message)) < 0)
   {
-    perror("Unable to send command to server");
+    perror("Unable to send command to server\n");
     return;
   }
 
   // Receive the server's response:
   if (read(socket_desc, server_response, sizeof(server_response)) < 0)
   {
-    perror("Error while receiving server's response");
+    perror("Error while receiving server's response\n");
     return;
   }
 
   printf("Server's response: %s\n", server_response);
+
+  if(strcmp(server_response , "File does not exist on remote server\n") == 0){
+    return;
+  }
 
   char dir_path[256];
   char filename[256];
@@ -63,7 +65,7 @@ void send_get_command(int socket_desc, const char *local_path, const char *remot
   char base_directory[256];
   if (getcwd(base_directory, sizeof(base_directory)) == NULL)
   {
-        perror("Error getting current working directory");
+        perror("Error getting current working directory\n");
         return;
   }
 
@@ -74,18 +76,18 @@ void send_get_command(int socket_desc, const char *local_path, const char *remot
   if (mkdirp(base_directory, dirname_result) == 0) {
       local_file = open(local_path, O_WRONLY | O_CREAT | O_TRUNC, 0666);
   } else {
-        perror("Error creating directories");
-        strcpy(server_response, "Error creating directories");
+        perror("Error creating directories\n");
+        strcpy(server_response, "Error creating directories\n");
         local_file = -1;  // Set local_file to an invalid value
     }
 
     if (local_file >= 0) {
         // Write the content to the local file:
         if (write(local_file, server_response, strlen(server_response)) < 0) {
-            perror("Error writing to remote file");
-            strcpy(client_message, "Error writing to local file");
+            perror("Error writing to remote file\n");
+            strcpy(client_message, "Error writing to local file\n");
         } else {
-            strcpy(client_message, "File successfully stored on local file system");
+            strcpy(client_message, "File successfully stored on local file system\n");
         }
 
         close(local_file);
@@ -114,19 +116,19 @@ void send_rm_command(int socket_desc, const char *remote_path)
   snprintf(client_message, sizeof(client_message), "RM %s", remote_path);
 
   printf("Sending this client message to the server\n");
-  printf("%s" , client_message);
+  printf("%s\n" , client_message);
 
   // Send the command to the server:
   if (send(socket_desc, client_message, strlen(client_message), 0) < 0)
   {
-    perror("Unable to send command to server");
+    perror("Unable to send command to server\n");
     return;
   }
 
   // Receive the server's response:
   if (recv(socket_desc, server_response, sizeof(server_response), 0) < 0)
   {
-    perror("Error while receiving server's response");
+    perror("Error while receiving server's response\n");
     return;
   }
 
@@ -152,14 +154,14 @@ void send_ls_command(int socket_desc, const char *remote_path)
   // Send the command to the server:
   if (send(socket_desc, client_message, strlen(client_message), 0) < 0)
   {
-    perror("Unable to send command to server");
+    perror("Unable to send command to server\n");
     return;
   }
 
   // Receive the server's response:
   if (recv(socket_desc, server_response, sizeof(server_response), 0) < 0)
   {
-    perror("Error while receiving server's response");
+    perror("Error while receiving server's response\n");
     return;
   }
 
@@ -181,7 +183,7 @@ void send_write_command(int socket_desc, const char *local_path, const char *rem
 
   if (local_file == NULL)
   {
-    perror("Error opening local file");
+    perror("Error opening local file\n");
     return;
   }
 
@@ -198,12 +200,14 @@ void send_write_command(int socket_desc, const char *local_path, const char *rem
   snprintf(client_message, sizeof(client_message), "WRITE %s\n%s", remote_path, file_content);
 
   printf("Sending this client message to the server\n");
-  printf("%s" , client_message);
+  printf("********************************************\n");
+  printf("%s\n" , client_message);
+  printf("********************************************\n");
 
   // Send the command to the server:
   if (send(socket_desc, client_message, strlen(client_message), 0) < 0)
   {
-    perror("Unable to send command to server");
+    perror("Unable to send command to server\n");
     free(file_content);
     return;
   }
@@ -211,7 +215,7 @@ void send_write_command(int socket_desc, const char *local_path, const char *rem
   // Receive the server's response:
   if (recv(socket_desc, server_response, sizeof(server_response), 0) < 0)
   {
-    perror("Error while receiving server's response");
+    perror("Error while receiving server's response\n");
     free(file_content);
     return;
   }

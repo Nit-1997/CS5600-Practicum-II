@@ -15,11 +15,34 @@
 #include "handlers/rm_handler.h"
 #include "handlers/ls_handler.h"
 
+#define CONFIG_FILE "config.ini"
+
+typedef struct {
+    char ip_address[15]; 
+    int port;
+} ServerConfig;
+
 #define errExit(msg)    \
   do {                  \
     perror(msg);        \
     exit(EXIT_FAILURE); \
   } while (0)
+
+
+ServerConfig read_config() {
+    ServerConfig config;
+    FILE *file = fopen(CONFIG_FILE, "r");
+
+    if (file == NULL) {
+        perror("Error opening config file");
+        exit(EXIT_FAILURE);
+    }
+
+    fscanf(file, "[server]\nip_address = %s\nport = %d", config.ip_address, &config.port);
+
+    fclose(file);
+    return config;
+}
 
 static void sigintHandler(int sig) {
   fflush(stdout);
@@ -32,6 +55,8 @@ void *handle_client(void *arg);
 int main(void)
 {
   if (signal(SIGINT, sigintHandler) == SIG_ERR) errExit("signal SIGINT");
+
+  ServerConfig config = read_config();
 
   int socket_desc, client_sock;
   socklen_t client_size;
@@ -48,8 +73,8 @@ int main(void)
 
   // Set port and IP:
   server_addr.sin_family = AF_INET;
-  server_addr.sin_port = htons(8081);
-  server_addr.sin_addr.s_addr = INADDR_ANY;
+  server_addr.sin_port = config.port;
+  inet_aton(config.ip_address, &server_addr.sin_addr);
 
   // Bind to the set port and IP:
   if (bind(socket_desc, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
@@ -65,7 +90,7 @@ int main(void)
     perror("Error while listening\n");
     return -1;
   }
-  printf("\nListening for incoming connections.....\n");
+  printf("\nListening for incoming connections at %s : %d....\n" , config.ip_address , config.port);
 
   while (1)
   {

@@ -48,7 +48,7 @@ void handle_rm_command(int client_sock, const char *remote_path) {
     char base_directory[256];
     if (getcwd(base_directory, sizeof(base_directory)) == NULL)
     {
-            perror("Error getting current working directory");
+            perror("Error getting current working directory\n");
             return;
     }
 
@@ -66,9 +66,9 @@ void handle_rm_command(int client_sock, const char *remote_path) {
     
         if(access(new_remote_path, F_OK) != -1){
             // Attempt to remove the file
-            if (access(new_remote_path, F_OK) != -1 && remove(new_remote_path) == 0) {
+            if (remove(new_remote_path) == 0) {
                 // File removal successful, send success message to client
-                snprintf(server_message, sizeof(server_message), "File %s removed successfully.\n", new_remote_path);
+                snprintf(server_message, sizeof(server_message), "All File versions removed successfully.\n");
                 version++;
             } else {
                 // File removal failed, send error message to client
@@ -76,8 +76,12 @@ void handle_rm_command(int client_sock, const char *remote_path) {
                 break;
             }
         }else{
-            snprintf(server_message, sizeof(server_message), "Error removing file %s.\n", new_remote_path);
-            break;
+            if(version == 1){
+                snprintf(server_message, sizeof(server_message), "File does not exist at %s.\n", new_remote_path);
+                break;
+            }else{
+                break;
+            }
         }
     }
 

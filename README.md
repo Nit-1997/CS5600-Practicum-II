@@ -1,6 +1,8 @@
 # CS5600-Practicum-II
 
-
+# config file
+  - ```config.ini``` , under server section add ip and ports both in remote and local config files.
+  
 # How to Run File Server
 
  - Go to server-code project if you want to run the file-server
