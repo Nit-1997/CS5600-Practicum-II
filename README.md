@@ -34,6 +34,8 @@
   - ```make rfs``` build the client binary
   - Run ```bash tests.sh``` , This will use the tests ```client-file-system``` in the project top level.
 
+# Architechture
+![alt text](https://github.com/Nit-1997/CS5600-Practicum-II/blob/main/practicum-2.jpeg)
 
 # Design on server
   
