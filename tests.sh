@@ -90,7 +90,7 @@ function test_ls() {
     echo "******************* Clean up using RM ***************************"
 
     $CLIENT_BINARY RM "blank.txt"  
-    rm "client-file-system/blank.txt"
+    rm "output.txt"
 }    
 
 

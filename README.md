@@ -2,7 +2,7 @@
 
 # config file
   - ```config.ini``` , under server section add ip and ports both in remote and local config files.
-  
+
 # How to Run File Server
 
  - Go to server-code project if you want to run the file-server
@@ -27,6 +27,12 @@
   -  ```./rfs GET <local-file-path> <version_number>``` , writes the content of remote file to local file system at the same local path using the integer version number.
   - ```./rfs RM <remote-file-path> ``` , deletes the content of remote file and the file at the given path on server (all versions).
   -  ```./rfs LS <remote-file-path> ``` , fetches the versioned information of remote file on the server.
+
+
+# How to run tests
+  - ```make server``` build the server binary and start the server ```./server```
+  - ```make rfs``` build the client binary
+  - Run ```bash tests.sh``` , This will use the tests ```client-file-system``` in the project top level.
 
 
 # Design on server
