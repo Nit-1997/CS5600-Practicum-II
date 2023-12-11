@@ -8,7 +8,7 @@
  - Go to server-code project if you want to run the file-server
  - Do ```make clean``` , then ```make server```. You should see a server binary created.
  - Do ```./server``` to run the server , which starts accepting socket connections on port 8080.
- - You need ```server-file-system`` directory in server-code (server file system root)
+ - You need ```server-file-system``` directory in server-code (server file system root)
 
 
 # How to Run File Client
